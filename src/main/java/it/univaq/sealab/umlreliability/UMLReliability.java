@@ -88,7 +88,7 @@ public class UMLReliability {
 	 * GaScenario on the Use Case, with root = first GaStep in the Sequence
 	 * @return scenarios' execution probabilities
 	 */
-	public List<Scenario> getScenariosProbs() {
+	public List<Scenario> getScenarios() {
 		final String gaScenarioST = "MARTE::MARTE_AnalysisModel::GQAM::GaScenario";
 		final List<UseCase> usecases = getStereotypedElements(model, UMLPackage.Literals.USE_CASE, gaScenarioST);
 		usecases.forEach(uc -> {
