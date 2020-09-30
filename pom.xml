@@ -4,6 +4,10 @@
   <artifactId>it.univaq.sealab.umlreliability</artifactId>
   <version>0.0.1-SNAPSHOT</version>
   <name>umlreliability</name>
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+  </properties>
   <build>
   <plugins>
 	<plugin>
@@ -16,4 +20,61 @@
 	</plugin>
   </plugins>
 </build>
+  <dependencies>
+    <!--  From maven central -->
+  	<dependency>
+  		<groupId>org.eclipse.emf</groupId>
+  		<artifactId>org.eclipse.emf.ecore</artifactId>
+  		<version>2.16.0</version>
+  	</dependency>
+  	<dependency>
+  		<groupId>org.eclipse.emf</groupId>
+  		<artifactId>org.eclipse.emf.ecore.xmi</artifactId>
+  		<version>2.16.0</version>
+  	</dependency>
+  	<dependency>
+  		<groupId>org.eclipse.emf</groupId>
+  		<artifactId>org.eclipse.emf.mapping.ecore2xml</artifactId>
+  		<version>2.11.0</version>
+  	</dependency>
+  	
+  	<!-- Eclipse jars installed in the local repository -->
+  	<dependency>
+		<groupId>it.univaq.disim.sealab.uml</groupId>
+		<artifactId>org.eclipse.uml2.uml</artifactId>
+		<version>5.5.0.v20181203-1331</version>
+	</dependency>
+  	<dependency>
+		<groupId>it.univaq.disim.sealab.uml</groupId>
+		<artifactId>org.eclipse.uml2.uml.resources</artifactId>
+		<version>5.5.0.v20181203-1331</version>
+	</dependency>
+  	<dependency>
+		<groupId>it.univaq.disim.sealab.uml</groupId>
+		<artifactId>org.eclipse.uml2.common</artifactId>
+		<version>2.5.0.v20181203-1331</version>
+	</dependency>
+  	<dependency>
+		<groupId>it.univaq.disim.sealab.uml</groupId>
+		<artifactId>org.eclipse.uml2.types</artifactId>
+		<version>2.5.0.v20181203-1331</version>
+	</dependency>
+  	<dependency>
+		<groupId>it.univaq.disim.sealab.uml.profiles</groupId>
+		<artifactId>org.eclipse.uml2.uml.profile.standard</artifactId>
+		<version>1.5.0.v20181203-1331</version>
+	</dependency>
+	
+	<!-- Profiles jar in src/main/resources/libs installed in the local repository -->
+  	<dependency>
+		<groupId>it.univaq.disim.sealab.uml.profiles</groupId>
+		<artifactId>org.eclipse.papyrus.marte.static.profile</artifactId>
+		<version>1.2.0.201703081153</version>
+	</dependency>
+  	<dependency>
+		<groupId>it.univaq.disim.sealab.uml.profiles</groupId>
+		<artifactId>com.masdes.dam.static.profile</artifactId>
+		<version>0.13.1.201801221725</version>
+	</dependency>
+  </dependencies>
 </project>
