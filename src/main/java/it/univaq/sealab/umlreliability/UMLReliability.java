@@ -37,7 +37,7 @@ public class UMLReliability {
 	private List<Component> components = new ArrayList<>();
 	private List<Link> links = new ArrayList<>();
 	
-	UMLReliability(final Model model) {
+	public UMLReliability(final Model model) {
 		this.model = model;
 	}
 
