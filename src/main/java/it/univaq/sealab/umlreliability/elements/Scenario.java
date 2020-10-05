@@ -1,4 +1,4 @@
-package it.univaq.sealab.umlreliability;
+package it.univaq.sealab.umlreliability.elements;
 
 import org.eclipse.uml2.uml.UseCase;
 
@@ -7,7 +7,7 @@ public class Scenario {
 	private UseCase element;
 	private double failureProb;
 	
-	Scenario(final UseCase element) {
+	public Scenario(final UseCase element) {
 		this.element = element;
 	}
 

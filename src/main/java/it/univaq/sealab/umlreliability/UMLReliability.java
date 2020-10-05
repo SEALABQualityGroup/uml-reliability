@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.util.EDataTypeUniqueEList;
@@ -27,6 +28,10 @@ import org.eclipse.uml2.uml.UseCase;
 import org.eclipse.uml2.uml.internal.impl.ComponentImpl;
 
 import com.masdes.dam.Complex_Data_Types.DaFailure;
+
+import it.univaq.sealab.umlreliability.elements.Component;
+import it.univaq.sealab.umlreliability.elements.Link;
+import it.univaq.sealab.umlreliability.elements.Scenario;
 
 public class UMLReliability {
 
@@ -87,16 +92,21 @@ public class UMLReliability {
 	/**
 	 * GaScenario on the Use Case, with root = first GaStep in the Sequence
 	 * @return scenarios' execution probabilities
+	 * @throws MissingTagException 
 	 */
-	public List<Scenario> getScenarios() {
+	public List<Scenario> getScenarios() throws MissingTagException {
 		final String gaScenarioST = "MARTE::MARTE_AnalysisModel::GQAM::GaScenario";
 		final List<UseCase> usecases = getStereotypedElements(model, UMLPackage.Literals.USE_CASE, gaScenarioST);
-		usecases.forEach(uc -> {
+		for (UseCase uc : usecases) {
 			final Scenario scenario = new Scenario(uc);
-			scenario.setFailureProb(Double.parseDouble(
-					((GaStep) uc.getValue(uc.getAppliedStereotype(gaScenarioST), "root")).getProb()));
+			final GaStep root = (GaStep) uc.getValue(uc.getAppliedStereotype(gaScenarioST), "root");
+			if (root == null) {
+				throw new MissingTagException(gaScenarioST, "root", uc.getName());
+			} else {
+				scenario.setFailureProb(Double.parseDouble(root.getProb()));
+			}
 			scenarios.add(scenario);
-		});
+		}
 		return scenarios;
 	}
 	
@@ -104,22 +114,26 @@ public class UMLReliability {
 	 * DaComponent.failure = (DaFailure) failure.occurrenceProb = (NFPReal) p
 	 * Invocations are obtained from sequence diagrams.
 	 * @return components with failure probabilities and invocations
+	 * @throws MissingTagException
 	 */
-	public List<Component> getComponents() {
+	public List<Component> getComponents() throws MissingTagException {
 		final String daComponentST = "DAM::DAM_UML_Extensions::System::Core::DaComponent";
 		final List<org.eclipse.uml2.uml.Component> umlComponents =
 				getStereotypedElements(model, UMLPackage.Literals.COMPONENT, daComponentST);
-		umlComponents.forEach(c -> {
+		for (org.eclipse.uml2.uml.Component c : umlComponents) {
 			final Component component = new Component(c);
 			
 			// Get the failure probability
-			component.setFailureProb(Double.valueOf(
-				((DaFailure) ((EObjectContainmentEList<?>) c
-						.getValue(c.getAppliedStereotype(daComponentST), "failure")).get(0))
-				.getOccurrenceProb().get(0)));
+			final EObjectContainmentEList<?> tags = (EObjectContainmentEList<?>) c
+					.getValue(c.getAppliedStereotype(daComponentST), "failure");
+			if (tags.isEmpty()) {
+				throw new MissingTagException(daComponentST, "failure", c.getName());
+			} else {
+				component.setFailureProb(Double.valueOf(((DaFailure) tags.get(0)).getOccurrenceProb().get(0)));
+			}
 			
 			components.add(component);
-		});
+		}
 		return getComponentsInvocations();
 	}
 	
@@ -156,18 +170,23 @@ public class UMLReliability {
 	 * Go over all the messages that are exchanged over a link
 	 * and sum their GaStep.msgSize to get the total msgSize of the link.
 	 * @return links with failure probabilities and message size
+	 * @throws MissingTagException 
 	 */
-	public List<Link> getLinks() {
+	public List<Link> getLinks() throws MissingTagException {
 		final String daConnectorST = "DAM::DAM_UML_Extensions::System::Core::DaConnector";
 		final List<CommunicationPath> daConnectors =
 				getStereotypedElements(model, UMLPackage.Literals.COMMUNICATION_PATH, daConnectorST);
-		daConnectors.forEach(cp -> {
+		for (CommunicationPath cp : daConnectors) {
 			final Link link = new Link(cp);
-			link.setFailureProb(Double.valueOf(
-				((DaFailure) ((EObjectContainmentEList<?>) cp
-						.getValue(cp.getAppliedStereotype(daConnectorST), "failure")).get(0))
-				.getOccurrenceProb().get(0)));
-		});
+
+			final EObjectContainmentEList<?> tags = (EObjectContainmentEList<?>) cp
+					.getValue(cp.getAppliedStereotype(daConnectorST), "failure");
+			if (tags.isEmpty()) {
+				throw new MissingTagException(daConnectorST, "failure", cp.getName());
+			} else {
+				link.setFailureProb(Double.valueOf(((DaFailure) tags.get(0)).getOccurrenceProb().get(0)));
+			}
+		}
 		return getMsgSizes();
 	}
 	
@@ -175,13 +194,13 @@ public class UMLReliability {
 	 * Go over all the messages that are exchanged over a link
 	 * and sum their GaStep.msgSize to get the total msgSize of the link.
 	 * @return total msgSize of each link
+	 * @throws MissingTagException
 	 */
-	private List<Link> getMsgSizes() {
+	private List<Link> getMsgSizes() throws MissingTagException {
 		final String gaStepST = "MARTE::MARTE_AnalysisModel::GQAM::GaStep";
 		final List<Message> messages = getElements(model, UMLPackage.Literals.MESSAGE);
-		messages.stream()
-			.filter(m -> !m.getMessageSort().equals(MessageSort.REPLY_LITERAL))
-			.forEach(message -> {
+		for (Message message : messages.stream()
+				.filter(m -> !m.getMessageSort().equals(MessageSort.REPLY_LITERAL)).collect(Collectors.toList())) {
 				
 			// Get the sending component
 			final Type sendType = ((MessageOccurrenceSpecification) message.getSendEvent())
@@ -197,7 +216,7 @@ public class UMLReliability {
 				final org.eclipse.uml2.uml.Component receiver = (org.eclipse.uml2.uml.Component) receiveType;
 				
 				// Find the link on which the components are deployed at opposite ends
-				links.forEach(link -> {
+				for (Link link : links) {
 					final List<Property> ends = link.getElement().getMemberEnds();
 					final Node node1 = (Node) ends.get(0).getType();
 					final Node node2 = (Node) ends.get(1).getType();
@@ -205,16 +224,20 @@ public class UMLReliability {
 						isComponentDeployedOnNode(node1, receiver) && isComponentDeployedOnNode(node2, sender)) {
 						final Stereotype gaStep = message.getAppliedStereotype(gaStepST);
 						if (gaStep != null) {
-							link.setMsgSize(link.getMsgSize() + Double.parseDouble(
-									(String) ((EDataTypeUniqueEList<?>) message.getValue(
-											message.getAppliedStereotype(gaStepST), "msgSize")).get(0)));
+							final EDataTypeUniqueEList<?> tags = (EDataTypeUniqueEList<?>) message
+									.getValue(message.getAppliedStereotype(gaStepST), "msgSize");
+							if (tags.isEmpty()) {
+								throw new MissingTagException(gaStepST, "msgSize", message.getName());
+							} else {
+								link.setMsgSize(link.getMsgSize() + Double.parseDouble((String) tags.get(0)));
+							}
 						} else {
 							LOGGER.info(String.format("Message '%s' has no GaStep stereotype.", message.getName()));
 						}
 					}
-				});
+				}
 			}
-		});
+		}
 		return links;
 	}
 }

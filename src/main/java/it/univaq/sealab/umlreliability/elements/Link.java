@@ -1,4 +1,4 @@
-package it.univaq.sealab.umlreliability;
+package it.univaq.sealab.umlreliability.elements;
 
 import org.eclipse.uml2.uml.CommunicationPath;
 

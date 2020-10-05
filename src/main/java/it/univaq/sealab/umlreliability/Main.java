@@ -2,9 +2,14 @@ package it.univaq.sealab.umlreliability;
 
 import java.util.List;
 
+import it.univaq.sealab.umlreliability.elements.Component;
+import it.univaq.sealab.umlreliability.elements.Link;
+import it.univaq.sealab.umlreliability.elements.Scenario;
+import it.univaq.sealab.umlreliability.model.UMLModelPapyrus;
+
 public class Main {
 	
-	public static void main(String[] args) {
+	public static void main(String[] args) throws MissingTagException {
 		
 		final UMLReliability uml = new UMLReliability(new UMLModelPapyrus(args[0]).getModel());
 		final List<Scenario> scenarios = uml.getScenarios();
