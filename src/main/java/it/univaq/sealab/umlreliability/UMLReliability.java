@@ -104,22 +104,26 @@ public class UMLReliability {
 	 * DaComponent.failure = (DaFailure) failure.occurrenceProb = (NFPReal) p
 	 * Invocations are obtained from sequence diagrams.
 	 * @return components with failure probabilities and invocations
+	 * @throws Exception 
 	 */
-	public List<Component> getComponents() {
+	public List<Component> getComponents() throws Exception {
 		final String daComponentST = "DAM::DAM_UML_Extensions::System::Core::DaComponent";
 		final List<org.eclipse.uml2.uml.Component> umlComponents =
 				getStereotypedElements(model, UMLPackage.Literals.COMPONENT, daComponentST);
-		umlComponents.forEach(c -> {
+		for (org.eclipse.uml2.uml.Component c : umlComponents) {
 			final Component component = new Component(c);
 			
 			// Get the failure probability
-			component.setFailureProb(Double.valueOf(
-				((DaFailure) ((EObjectContainmentEList<?>) c
-						.getValue(c.getAppliedStereotype(daComponentST), "failure")).get(0))
-				.getOccurrenceProb().get(0)));
+			final EObjectContainmentEList<?> tags = (EObjectContainmentEList<?>) c
+					.getValue(c.getAppliedStereotype(daComponentST), "failure");
+			if (tags.isEmpty()) {
+				throw new Exception(String.format("DaComponent '%s' has no tag 'failure'.", c.getName()));
+			} else {
+				component.setFailureProb(Double.valueOf(((DaFailure) tags.get(0)).getOccurrenceProb().get(0)));
+			}
 			
 			components.add(component);
-		});
+		}
 		return getComponentsInvocations();
 	}
 	
@@ -156,18 +160,23 @@ public class UMLReliability {
 	 * Go over all the messages that are exchanged over a link
 	 * and sum their GaStep.msgSize to get the total msgSize of the link.
 	 * @return links with failure probabilities and message size
+	 * @throws Exception 
 	 */
-	public List<Link> getLinks() {
+	public List<Link> getLinks() throws Exception {
 		final String daConnectorST = "DAM::DAM_UML_Extensions::System::Core::DaConnector";
 		final List<CommunicationPath> daConnectors =
 				getStereotypedElements(model, UMLPackage.Literals.COMMUNICATION_PATH, daConnectorST);
-		daConnectors.forEach(cp -> {
+		for (CommunicationPath cp : daConnectors) {
 			final Link link = new Link(cp);
-			link.setFailureProb(Double.valueOf(
-				((DaFailure) ((EObjectContainmentEList<?>) cp
-						.getValue(cp.getAppliedStereotype(daConnectorST), "failure")).get(0))
-				.getOccurrenceProb().get(0)));
-		});
+
+			final EObjectContainmentEList<?> tags = (EObjectContainmentEList<?>) cp
+					.getValue(cp.getAppliedStereotype(daConnectorST), "failure");
+			if (tags.isEmpty()) {
+				throw new Exception(String.format("DaConnector '%s' has no tag 'failure'.", cp.getName()));
+			} else {
+				link.setFailureProb(Double.valueOf(((DaFailure) tags.get(0)).getOccurrenceProb().get(0)));
+			}
+		}
 		return getMsgSizes();
 	}
 	

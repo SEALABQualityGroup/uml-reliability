@@ -4,7 +4,7 @@ import java.util.List;
 
 public class Main {
 	
-	public static void main(String[] args) {
+	public static void main(String[] args) throws Exception {
 		
 		final UMLReliability uml = new UMLReliability(new UMLModelPapyrus(args[0]).getModel());
 		final List<Scenario> scenarios = uml.getScenarios();
