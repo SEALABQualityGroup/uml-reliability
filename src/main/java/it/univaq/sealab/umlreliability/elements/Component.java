@@ -1,4 +1,4 @@
-package it.univaq.sealab.umlreliability;
+package it.univaq.sealab.umlreliability.elements;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -9,7 +9,7 @@ public class Component {
 	private double failureProb;
 	private Map<Scenario,Integer> invocations = new HashMap<>();
 	
-	Component(final org.eclipse.uml2.uml.Component element) {
+	public Component(final org.eclipse.uml2.uml.Component element) {
 		this.element = element;
 	}
 

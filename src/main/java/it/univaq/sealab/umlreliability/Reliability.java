@@ -2,6 +2,10 @@ package it.univaq.sealab.umlreliability;
 
 import java.util.List;
 
+import it.univaq.sealab.umlreliability.elements.Component;
+import it.univaq.sealab.umlreliability.elements.Link;
+import it.univaq.sealab.umlreliability.elements.Scenario;
+
 public class Reliability {
 
 	private List<Scenario> scenarios;

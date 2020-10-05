@@ -1,4 +1,4 @@
-package it.univaq.sealab.umlreliability;
+package it.univaq.sealab.umlreliability.model;
 
 import java.io.File;
 import java.io.IOException;

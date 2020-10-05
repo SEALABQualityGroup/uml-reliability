@@ -28,6 +28,10 @@ import org.eclipse.uml2.uml.internal.impl.ComponentImpl;
 
 import com.masdes.dam.Complex_Data_Types.DaFailure;
 
+import it.univaq.sealab.umlreliability.elements.Component;
+import it.univaq.sealab.umlreliability.elements.Link;
+import it.univaq.sealab.umlreliability.elements.Scenario;
+
 public class UMLReliability {
 
 	private static final Logger LOGGER = Logger.getLogger(UMLReliability.class.getName());
