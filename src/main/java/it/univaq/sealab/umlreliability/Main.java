@@ -9,7 +9,7 @@ import it.univaq.sealab.umlreliability.model.UMLModelPapyrus;
 
 public class Main {
 	
-	public static void main(String[] args) throws Exception {
+	public static void main(String[] args) throws MissingTagException {
 		
 		final UMLReliability uml = new UMLReliability(new UMLModelPapyrus(args[0]).getModel());
 		final List<Scenario> scenarios = uml.getScenarios();
