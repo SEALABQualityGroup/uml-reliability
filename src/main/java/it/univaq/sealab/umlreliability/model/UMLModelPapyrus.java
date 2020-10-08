@@ -29,7 +29,6 @@ public class UMLModelPapyrus {
 	private static final Logger LOGGER = Logger.getLogger(UMLModelPapyrus.class.getName());
 	               
 	// MARTE       
-	private static final String MARTE_RESOURCE = "/libs/org.eclipse.papyrus.marte.static.profile_1.2.0.201703081153.jar";
 	private static final String MARTE_BASE_PATHMAP = "pathmap://Papyrus_PROFILES/";
 	private static final String MARTE_PROFILE = "MARTE.profile.uml#";
 	private static final String MARTE_NFP_FRAGMENT = "_U_GAoAPMEdyuUt-4qHuVvQ";
@@ -40,7 +39,6 @@ public class UMLModelPapyrus {
 	private static final String MARTE_GQAM_FRAGMENT = "_4bV20APMEdyuUt-4qHuVvQ";
 	               
 	// DAM         
-	private static final String DAM_RESOURCE = "/libs/com.masdes.dam.static.profile_0.13.1.201801221725.jar";
 	private static final String DAM_BASE_PATHMAP = "pathmap://DAM_PROFILES/";
 	private static final String DAM_PROFILE = "DAM.profile.uml#";
 	private static final String DAM_PROFILE_FRAGMENT = "_dYZGQOI-EeKRk-i8_Z91aQ";
@@ -80,9 +78,9 @@ public class UMLModelPapyrus {
 	}
 	
 	private void initMARTE() {
-		final URI marteURI = URI.createURI("jar:" + getClass().getResource(MARTE_RESOURCE).toString() + "!/");
+		final URI marteURI = URI.createURI(getClass().getResource("/profiles").toString());
 		resourceSet.getURIConverter().getURIMap().put(URI.createURI(MARTE_BASE_PATHMAP),
-				marteURI.appendSegment("resources").appendSegment(""));
+				marteURI.appendSegment(""));
 		final String MARTE_PROFILES_PATHMAP = MARTE_BASE_PATHMAP + MARTE_PROFILE;
 		
 		// NFP
@@ -117,9 +115,9 @@ public class UMLModelPapyrus {
 	}
 	
 	private void initDAM() {
-		final URI damURI = URI.createURI("jar:" + getClass().getResource(DAM_RESOURCE).toString() + "!/");
+		final URI damURI = URI.createURI(getClass().getResource("/profiles").toString());
 		resourceSet.getURIConverter().getURIMap().put(URI.createURI(DAM_BASE_PATHMAP),
-				damURI.appendSegment("resources").appendSegment(""));
+				damURI.appendSegment(""));
 		final String DAM_PROFILES_PATHMAP = DAM_BASE_PATHMAP + DAM_PROFILE;
 		
 		// DAM_Profile
