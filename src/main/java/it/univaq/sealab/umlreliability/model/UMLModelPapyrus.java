@@ -78,7 +78,7 @@ public class UMLModelPapyrus {
 	}
 	
 	private void initMARTE() {
-		final URI marteURI = URI.createURI(getClass().getResource("/profiles").toString());
+		final URI marteURI = URI.createURI(getClass().getResource("/umlprofiles").toString());
 		resourceSet.getURIConverter().getURIMap().put(URI.createURI(MARTE_BASE_PATHMAP),
 				marteURI.appendSegment(""));
 		final String MARTE_PROFILES_PATHMAP = MARTE_BASE_PATHMAP + MARTE_PROFILE;
@@ -115,7 +115,7 @@ public class UMLModelPapyrus {
 	}
 	
 	private void initDAM() {
-		final URI damURI = URI.createURI(getClass().getResource("/profiles").toString());
+		final URI damURI = URI.createURI(getClass().getResource("/umlprofiles").toString());
 		resourceSet.getURIConverter().getURIMap().put(URI.createURI(DAM_BASE_PATHMAP),
 				damURI.appendSegment(""));
 		final String DAM_PROFILES_PATHMAP = DAM_BASE_PATHMAP + DAM_PROFILE;
