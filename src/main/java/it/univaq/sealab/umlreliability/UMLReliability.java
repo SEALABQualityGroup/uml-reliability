@@ -42,7 +42,7 @@ public class UMLReliability {
 	private List<Component> components = new ArrayList<>();
 	private List<Link> links = new ArrayList<>();
 	
-	UMLReliability(final Model model) throws MissingTagException {
+	public UMLReliability(final Model model) throws MissingTagException {
 		this.model = model;
 		extractScenarios();
 		extractComponents();
