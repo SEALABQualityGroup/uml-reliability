@@ -42,8 +42,11 @@ public class UMLReliability {
 	private List<Component> components = new ArrayList<>();
 	private List<Link> links = new ArrayList<>();
 	
-	UMLReliability(final Model model) {
+	UMLReliability(final Model model) throws MissingTagException {
 		this.model = model;
+		extractScenarios();
+		extractComponents();
+		extractLinks();
 	}
 
 	public Model getModel() {
@@ -80,13 +83,18 @@ public class UMLReliability {
 	}
 
 	private boolean isComponentDeployedOnNode(final Node node, final org.eclipse.uml2.uml.Component component) {
-		return node.getDeployments().stream()
-			.flatMap(d ->d.getDeployedArtifacts().stream()
-			.flatMap(a -> ((Artifact) a).getManifestations().stream()))
+		return node.getDeployments().parallelStream()
+			.flatMap(d ->d.getDeployedArtifacts().parallelStream()
+			.flatMap(a -> ((Artifact) a).getManifestations().parallelStream()))
 			.anyMatch(m -> m.getUtilizedElement().equals(component)) ||
 			
 			// Also look in nested nodes
-			node.getNestedNodes().stream().anyMatch(nestedNode -> isComponentDeployedOnNode(nestedNode, component));
+			node.getNestedNodes().parallelStream()
+				.anyMatch(nestedNode -> isComponentDeployedOnNode(nestedNode, component));
+	}
+	
+	public List<Scenario> getScenarios() {
+		return this.scenarios;
 	}
 	
 	/**
@@ -94,7 +102,7 @@ public class UMLReliability {
 	 * @return scenarios' execution probabilities
 	 * @throws MissingTagException 
 	 */
-	public List<Scenario> getScenarios() throws MissingTagException {
+	private List<Scenario> extractScenarios() throws MissingTagException {
 		final String gaScenarioST = "MARTE::MARTE_AnalysisModel::GQAM::GaScenario";
 		final List<UseCase> usecases = getStereotypedElements(model, UMLPackage.Literals.USE_CASE, gaScenarioST);
 		for (UseCase uc : usecases) {
@@ -103,7 +111,7 @@ public class UMLReliability {
 			if (root == null) {
 				throw new MissingTagException(gaScenarioST, "root", uc.getName());
 			} else {
-				scenario.setFailureProb(Double.parseDouble(root.getProb()));
+				scenario.setProbability(Double.parseDouble(root.getProb()));
 			}
 			scenarios.add(scenario);
 		}
@@ -116,7 +124,7 @@ public class UMLReliability {
 	 * @return components with failure probabilities and invocations
 	 * @throws MissingTagException
 	 */
-	public List<Component> getComponents() throws MissingTagException {
+	private List<Component> extractComponents() throws MissingTagException {
 		final String daComponentST = "DAM::DAM_UML_Extensions::System::Core::DaComponent";
 		final List<org.eclipse.uml2.uml.Component> umlComponents =
 				getStereotypedElements(model, UMLPackage.Literals.COMPONENT, daComponentST);
@@ -134,17 +142,17 @@ public class UMLReliability {
 			
 			components.add(component);
 		}
-		return getComponentsInvocations();
+		return extractComponentsInvocations();
 	}
 	
 	/**
 	 * Invocations are obtained from sequence diagrams.
 	 * @return int[scenario][numberOfInvocations] for each component
 	 */
-	private List<Component> getComponentsInvocations() {
+	private List<Component> extractComponentsInvocations() {
 		scenarios.forEach(scenario -> {
 			final List<Message> messages = getElements(scenario.getElement(), UMLPackage.Literals.MESSAGE);
-			messages.stream()
+			messages.parallelStream()
 				.filter(m -> !m.getMessageSort().equals(MessageSort.REPLY_LITERAL))
 				.forEach(message -> {
 				
@@ -153,10 +161,11 @@ public class UMLReliability {
 						// Count the invocation
 						final org.eclipse.uml2.uml.Component umlComponent =
 								(org.eclipse.uml2.uml.Component) ((Operation) signature).getOwner();
-						final Component component = components.stream()
+						final Component component = components.parallelStream()
 								.filter(c -> c.getElement().equals(umlComponent)).findFirst().orElse(null);
 						final Map<Scenario,Integer> invocations = component.getInvocations();
 						invocations.put(scenario, invocations.getOrDefault(scenario, 0) + 1);
+						scenario.getComponents().add(component);
 					} else {
 						LOGGER.info(String.format("Message '%s' has no signature.", message.getName()));
 					}
@@ -172,7 +181,7 @@ public class UMLReliability {
 	 * @return links with failure probabilities and message size
 	 * @throws MissingTagException 
 	 */
-	public List<Link> getLinks() throws MissingTagException {
+	private List<Link> extractLinks() throws MissingTagException {
 		final String daConnectorST = "DAM::DAM_UML_Extensions::System::Core::DaConnector";
 		final List<CommunicationPath> daConnectors =
 				getStereotypedElements(model, UMLPackage.Literals.COMMUNICATION_PATH, daConnectorST);
@@ -186,8 +195,10 @@ public class UMLReliability {
 			} else {
 				link.setFailureProb(Double.valueOf(((DaFailure) tags.get(0)).getOccurrenceProb().get(0)));
 			}
+			
+			links.add(link);
 		}
-		return getMsgSizes();
+		return extractMsgSizes();
 	}
 	
 	/**
@@ -196,43 +207,49 @@ public class UMLReliability {
 	 * @return total msgSize of each link
 	 * @throws MissingTagException
 	 */
-	private List<Link> getMsgSizes() throws MissingTagException {
+	private List<Link> extractMsgSizes() throws MissingTagException {
 		final String gaStepST = "MARTE::MARTE_AnalysisModel::GQAM::GaStep";
-		final List<Message> messages = getElements(model, UMLPackage.Literals.MESSAGE);
-		for (Message message : messages.stream()
-				.filter(m -> !m.getMessageSort().equals(MessageSort.REPLY_LITERAL)).collect(Collectors.toList())) {
+		for (Scenario scenario : scenarios) {
+			final List<Message> messages =
+					getStereotypedElements(scenario.getElement(), UMLPackage.Literals.MESSAGE, gaStepST);
+			for (Message message : messages.parallelStream()
+					.filter(m -> !m.getMessageSort().equals(MessageSort.REPLY_LITERAL)).collect(Collectors.toList())) {
+					
+				// Get the sending component
+				final Type sendType = ((MessageOccurrenceSpecification) message.getSendEvent())
+						.getCovered().getRepresents().getType();
 				
-			// Get the sending component
-			final Type sendType = ((MessageOccurrenceSpecification) message.getSendEvent())
-					.getCovered().getRepresents().getType();
-			
-			// Get the receiving component
-			final Type receiveType = ((MessageOccurrenceSpecification) message.getReceiveEvent())
-					.getCovered().getRepresents().getType();
-			
-			// Only go through messages between components
-			if (sendType instanceof ComponentImpl && receiveType instanceof ComponentImpl) {
-				final org.eclipse.uml2.uml.Component sender = (org.eclipse.uml2.uml.Component) sendType;
-				final org.eclipse.uml2.uml.Component receiver = (org.eclipse.uml2.uml.Component) receiveType;
+				// Get the receiving component
+				final Type receiveType = ((MessageOccurrenceSpecification) message.getReceiveEvent())
+						.getCovered().getRepresents().getType();
 				
-				// Find the link on which the components are deployed at opposite ends
-				for (Link link : links) {
-					final List<Property> ends = link.getElement().getMemberEnds();
-					final Node node1 = (Node) ends.get(0).getType();
-					final Node node2 = (Node) ends.get(1).getType();
-					if (isComponentDeployedOnNode(node1, sender) && isComponentDeployedOnNode(node2, receiver) ||
-						isComponentDeployedOnNode(node1, receiver) && isComponentDeployedOnNode(node2, sender)) {
-						final Stereotype gaStep = message.getAppliedStereotype(gaStepST);
-						if (gaStep != null) {
-							final EDataTypeUniqueEList<?> tags = (EDataTypeUniqueEList<?>) message
-									.getValue(message.getAppliedStereotype(gaStepST), "msgSize");
-							if (tags.isEmpty()) {
-								throw new MissingTagException(gaStepST, "msgSize", message.getName());
+				// Only go through messages between components
+				if (sendType instanceof ComponentImpl && receiveType instanceof ComponentImpl) {
+					final org.eclipse.uml2.uml.Component sender = (org.eclipse.uml2.uml.Component) sendType;
+					final org.eclipse.uml2.uml.Component receiver = (org.eclipse.uml2.uml.Component) receiveType;
+					
+					// Find the link on which the components are deployed at opposite ends
+					for (Link link : links) {
+						final List<Property> ends = link.getElement().getMemberEnds();
+						final Node node1 = (Node) ends.get(0).getType();
+						final Node node2 = (Node) ends.get(1).getType();
+						if (isComponentDeployedOnNode(node1, sender) && isComponentDeployedOnNode(node2, receiver) ||
+							isComponentDeployedOnNode(node1, receiver) && isComponentDeployedOnNode(node2, sender)) {
+							final Stereotype gaStep = message.getAppliedStereotype(gaStepST);
+							if (gaStep != null) {
+								final EDataTypeUniqueEList<?> tags = (EDataTypeUniqueEList<?>) message
+										.getValue(message.getAppliedStereotype(gaStepST), "msgSize");
+								if (tags.isEmpty()) {
+									throw new MissingTagException(gaStepST, "msgSize", message.getName());
+								} else {
+									final Map<Scenario,Double> msgSizes = link.getMsgSize();
+									msgSizes.put(scenario, msgSizes.getOrDefault(scenario, 0.0) +
+											Double.parseDouble((String) tags.get(0)));
+									scenario.getLinks().add(link);
+								}
 							} else {
-								link.setMsgSize(link.getMsgSize() + Double.parseDouble((String) tags.get(0)));
+								LOGGER.info(String.format("Message '%s' has no GaStep stereotype.", message.getName()));
 							}
-						} else {
-							LOGGER.info(String.format("Message '%s' has no GaStep stereotype.", message.getName()));
 						}
 					}
 				}
